@@ -1,7 +1,7 @@
 package CTSException;
 
 public enum ExOther implements ExType{
-    argumentNum("Arguments illegal"),
+    argumentIllegal("Arguments illegal"),
     permissionSet("WanNiBa");
     String message;
     ExOther(String message){
