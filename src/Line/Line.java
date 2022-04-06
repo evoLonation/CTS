@@ -13,9 +13,18 @@ public class Line {
     private int loadCapacity;
     private int lastNum = 0;
 //    TreeMap<Integer, Station> stationsByDistance = new TreeMap<Integer, Station>();
-    private TreeMap<String, Integer> stationNameOrder = new TreeMap<String, Integer>();
-    private TreeMap<Integer, Station> stationsByOrder = new TreeMap<Integer, Station>();
+    private TreeMap<String, Station> stationByName = new TreeMap<>();
 
+    class StationCompare implements Comparator{
+        @Override
+        public int compare(Object o1, Object o2) {
+            if(((Station)o1).getDistance() == ((Station)o2).getDistance()){
+                return ((Station)o1).getName().compareTo(((Station)o2).getName());
+            }
+            return ((Station)o1).getDistance() - ((Station)o2).getDistance();
+        }
+    }
+    private TreeSet<Station> stationSet = new TreeSet<>(new StationCompare());
     private ArrayList<Train> trains = new ArrayList<Train>();
 
 
@@ -25,9 +34,8 @@ public class Line {
         }
         this.id = id;
         this.loadCapacity = loadCapacity;
-        stationsByOrder.put(lastNum, new Station());
-        stationNameOrder.put("Delhi-3", lastNum);
-        lastNum ++;
+        Station startStation = new Station();
+        addStation(startStation);
     }
 
     public String getId(){
@@ -47,11 +55,11 @@ public class Line {
     }
 
     public Station getStationByName(String name) throws CTSException{
-        Integer order = stationNameOrder.get(name);
-        if(order == null){
+        Station station = stationByName.get(name);
+        if(station == null){
             throw new CTSException(ExLine.stationNoExist);
         }
-        return stationsByOrder.get(order);
+        return station;
     }
     public int getRemainCapacity(){
         return loadCapacity - trains.size();
@@ -61,20 +69,19 @@ public class Line {
     }
 
     public void addStation(Station station) throws CTSException {
-        if(stationNameOrder.get(station.getName()) != null){
+        if(stationByName.get(station.getName()) != null){
             throw new CTSException(ExLine.stationExist);
         }
-        stationsByOrder.put(lastNum, station);
-        stationNameOrder.put(station.getName(), lastNum);
-        lastNum++ ;
+        stationByName.put(station.getName(), station);
+        stationSet.add(station);
     }
     public void deleteStation(String stationName) throws CTSException {
-        Integer order = stationNameOrder.get(stationName);
-        if(order == null){
+        Station station = stationByName.get(stationName);
+        if(station == null){
             throw new CTSException(ExLine.stationNoExist);
         }
-        stationNameOrder.remove(stationName);
-        stationsByOrder.remove(order);
+        stationByName.remove(stationName);
+        stationSet.remove(station);
     }
 
     static public void addLine(Line line) throws CTSException{
@@ -116,8 +123,7 @@ public class Line {
     @Override
     public String toString() {
         String ret = id + " " + trains.size() + "/" + loadCapacity;
-        Collection<Station> stations = stationsByOrder.values();
-        Iterator<Station> it = stations.iterator();
+        Iterator<Station> it = stationSet.iterator();
         it.next();
         while(it.hasNext()) {
             Station station = it.next();

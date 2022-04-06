@@ -109,7 +109,7 @@ public class CTSSystem {
         }
         int i = 1;
         for(Line line : lines){
-            System.out.println("[" + Integer.toString(i) + "] " + line);
+            System.out.println("[" + Integer.toString(i++) + "] " + line);
         }
     }
 
