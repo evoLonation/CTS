@@ -18,16 +18,12 @@ public class Station{
         this.name = name;
         this.distance = distance;
     }
-    String getName() {
+    public String getName() {
         return name;
     }
-    int getDistance() {
+    public int getDistance() {
         return distance;
     }
-    void setName(String name) {
-        this.name = name;
-    }
-    void setDistance(int distance) {
-        this.distance = distance;
-    }
+
+
 }

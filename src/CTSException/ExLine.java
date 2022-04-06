@@ -5,7 +5,11 @@ public enum ExLine implements ExType{
     stationNoExist("Station does not exist"),
     capacity("Capacity illegal"),
     lineExist("Line already exists"),
-    lineNoExist("Line does not exist");
+    lineNoExist("Line does not exist"),
+
+    //自定义
+    NotHaveTheTrain("Not have the train");
+
 
     String message;
     ExLine(String message){

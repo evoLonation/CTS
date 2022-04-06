@@ -2,6 +2,7 @@ package Line;
 
 import CTSException.CTSException;
 import CTSException.*;
+import Train.Train;
 
 import java.util.*;
 
@@ -10,11 +11,12 @@ public class Line {
 
     private String id;
     private int loadCapacity;
-    private int alreadyLoad;
     private int lastNum = 0;
 //    TreeMap<Integer, Station> stationsByDistance = new TreeMap<Integer, Station>();
-    TreeMap<String, Integer> stationNameOrder = new TreeMap<String, Integer>();
-    TreeMap<Integer, Station> stationsByOrder = new TreeMap<Integer, Station>();
+    private TreeMap<String, Integer> stationNameOrder = new TreeMap<String, Integer>();
+    private TreeMap<Integer, Station> stationsByOrder = new TreeMap<Integer, Station>();
+
+    private ArrayList<Train> trains = new ArrayList<Train>();
 
 
     public Line(String id, int loadCapacity) throws CTSException{
@@ -28,12 +30,31 @@ public class Line {
         lastNum ++;
     }
 
+    public String getId(){
+        return id;
+    }
+
+    static public boolean checkIdExist(String id){
+        Line ret = lines.get(id);
+        return ret != null;
+    }
     static public Line getLineById(String id) throws CTSException{
         Line ret = lines.get(id);
         if(ret == null){
             throw new CTSException(ExLine.lineNoExist);
         }
         return ret;
+    }
+
+    public Station getStationByName(String name) throws CTSException{
+        Integer order = stationNameOrder.get(name);
+        if(order == null){
+            throw new CTSException(ExLine.stationNoExist);
+        }
+        return stationsByOrder.get(order);
+    }
+    public int getRemainCapacity(){
+        return loadCapacity - trains.size();
     }
     static public Collection<Line> getAllLine(){
         return lines.values();
@@ -69,11 +90,32 @@ public class Line {
         lines.remove(lineId);
     }
 
+    //给Train类的友元函数
+    public class ToTrain{
+        public void addTrain(Train train) throws CTSException{
+            if(trains.size() >= loadCapacity){
+                throw new CTSException(ExTrain.lineExistAndFree);
+            }
+            trains.add(train);
+        }
+        public void deleteTrain(Train train) throws CTSException{
+            if(!trains.remove(train)){
+                throw new CTSException(ExLine.NotHaveTheTrain);
+            }
+        }
+    }
+    public void giveKeyTo(Train other) {
+        other.receiveKey(new ToTrain());
+    }
 
+
+    public ArrayList<Train> getAllTrain(){
+        return trains;
+    }
 
     @Override
     public String toString() {
-        String ret = id + " " + alreadyLoad + "/" + loadCapacity;
+        String ret = id + " " + trains.size() + "/" + loadCapacity;
         Collection<Station> stations = stationsByOrder.values();
         Iterator<Station> it = stations.iterator();
         it.next();
