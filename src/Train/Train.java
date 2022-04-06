@@ -5,8 +5,9 @@ import Line.Line;
 
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.TreeSet;
 
-public abstract class Train {
+public abstract class Train implements Comparable{
 
     static private HashMap<String, Train> trainsMap = new HashMap<String, Train>();
 
@@ -92,11 +93,23 @@ public abstract class Train {
 
     @Override
     public String toString() {
-        String ret = String.format("[%s]: [%s]", id, myLine.getId());
+        String ret = String.format("%s: %s", id, myLine.getId());
 
         for(int i = 0; i < ticketPrices.length; i++){
-            ret += String.format(" [[%s]][%s]:[%s]", trainSeatArr[i], ticketPrices[i], ticketNums[i]);
+            ret += String.format(" [%s]%.2f:%d", trainSeatArr[i], ticketPrices[i], ticketNums[i]);
         }
         return  ret;
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        int type1 = this instanceof KoyaTrain ? 1 :
+                this instanceof GatimaanTrain ? 2 : 3;
+        int type2 = o instanceof KoyaTrain ? 1 :
+                o instanceof GatimaanTrain ? 2 : 3;
+        if(type1 == type2){
+            return this.id.compareTo(((Train)o).id);
+        }
+        return type1 - type2;
     }
 }

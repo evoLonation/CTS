@@ -155,6 +155,7 @@ public class CTSSystem {
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 1) throw new CTSException(ExOther.argumentIllegal);
         TrainSystem.deleteTrain(args[0]);
+        System.out.println("Del Train Success");
     }
     private void checkTicket(String[] args) throws CTSException {
         if(isSuper) throw new CTSException(ExOther.commandNoExist);
@@ -162,11 +163,20 @@ public class CTSSystem {
         TrainSystem.checkTicket(args[0], args[1], args[2], args[3]);
     }
     private void listTrain(String[] args) throws CTSException {
-        if(args.length != 1) throw new CTSException(ExOther.argumentIllegal);
-        ArrayList<Train> trains = Line.getLineById(args[0]).getAllTrain();
+        if(args.length > 1) throw new CTSException(ExOther.argumentIllegal);
+        Collection<Train> trains;
+        if(args.length == 0){
+            trains = TrainSystem.getAllTrain();
+        }
+        else{
+            trains = Line.getLineById(args[0]).getAllTrain();
+        }
         int i = 1;
         for(Train train : trains){
-            System.out.println("[" + i + "]" + train);
+            System.out.println("[" + i++ + "] " + train);
+        }
+        if(trains.size() == 0){
+            System.out.println("No Trains");
         }
     }
 

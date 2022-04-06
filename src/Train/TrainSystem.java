@@ -5,9 +5,11 @@ import Line.*;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.TreeSet;
 
 public class TrainSystem {
-    static private HashMap<String, Train> trainsMap = new HashMap<String, Train>();
+    static private HashMap<String, Train> trainById = new HashMap<String, Train>();
+    static private TreeSet<Train> trainSet = new TreeSet<Train>();
 
     static void checkIdIllegal(String id) throws CTSException {
         if(!id.matches("[G|K|0]\\d\\d\\d\\d")){
@@ -28,7 +30,7 @@ public class TrainSystem {
 
     //注意，目前只能用于deltrain，不能用于checticket，异常信息不一样
     static Train getTrainById(String id) throws CTSException{
-        Train ret = trainsMap.get(id);
+        Train ret = trainById.get(id);
         if(ret == null){
             throw new CTSException(ExTrain.trainNoExist);
         }
@@ -41,7 +43,7 @@ public class TrainSystem {
         if(ticketNumsStr.length != typeNum || ticketPricesStr.length != typeNum){
             throw new CTSException(ExOther.argumentIllegal);
         }
-        if(trainsMap.get(id) != null){
+        if(trainById.get(id) != null){
             throw new CTSException(ExTrain.trainIdExist);
         }
         if(!Line.checkIdExist(lineId) || Line.getLineById(lineId).getRemainCapacity() <= 0){
@@ -79,13 +81,15 @@ public class TrainSystem {
         }
 
         Train newTrain = generateTrain(id, ticketNums, ticketPrices);
-        trainsMap.put(id,newTrain);
+        trainById.put(id,newTrain);
+        trainSet.add(newTrain);
         newTrain.setMyLine(Line.getLineById(lineId));
     }
     static public void deleteTrain(String id) throws CTSException{
         Train train = getTrainById(id);
         train.releaseMyLine();
-        trainsMap.remove(id);
+        trainSet.remove(train);
+        trainById.remove(id);
     }
 
 
@@ -93,7 +97,7 @@ public class TrainSystem {
     //票价相关
     static public void checkTicket(String id, String from, String to, String seat) throws CTSException{
         checkIdIllegal(id);
-        Train train = trainsMap.get(id);
+        Train train = trainById.get(id);
         if(train == null){
             throw new CTSException(ExTrain.trainIdNoExist);
         }
@@ -107,13 +111,13 @@ public class TrainSystem {
         int d2 = station2.getDistance();
         String name1 = station1.getName();
         String name2 = station2.getName();
-        System.out.printf("[%s: %s->%s] seat:%s remain:%d distance:%d price:%.2f",
+        System.out.printf("[%s: %s->%s] seat:%s remain:%d distance:%d price:%.2f\n",
                 train.getId(), station1.getName(), station2.getName(),
                 seat, train.getSeatNum(seat), d2 - d1, (d2 - d1) * train.getSeatPrice(seat) );
     }
 
     static public Collection<Train> getAllTrain(){
-        return trainsMap.values();
+        return trainSet;
     }
 
 }

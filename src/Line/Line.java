@@ -25,7 +25,7 @@ public class Line {
         }
     }
     private TreeSet<Station> stationSet = new TreeSet<>(new StationCompare());
-    private ArrayList<Train> trains = new ArrayList<Train>();
+    private TreeSet<Train> trainSet = new TreeSet<Train>();
 
 
     public Line(String id, int loadCapacity) throws CTSException{
@@ -62,7 +62,7 @@ public class Line {
         return station;
     }
     public int getRemainCapacity(){
-        return loadCapacity - trains.size();
+        return loadCapacity - trainSet.size();
     }
     static public Collection<Line> getAllLine(){
         return lines.values();
@@ -100,13 +100,13 @@ public class Line {
     //给Train类的友元函数
     public class ToTrain{
         public void addTrain(Train train) throws CTSException{
-            if(trains.size() >= loadCapacity){
+            if(trainSet.size() >= loadCapacity){
                 throw new CTSException(ExTrain.lineExistAndFree);
             }
-            trains.add(train);
+            trainSet.add(train);
         }
         public void deleteTrain(Train train) throws CTSException{
-            if(!trains.remove(train)){
+            if(!trainSet.remove(train)){
                 throw new CTSException(ExLine.NotHaveTheTrain);
             }
         }
@@ -116,13 +116,13 @@ public class Line {
     }
 
 
-    public ArrayList<Train> getAllTrain(){
-        return trains;
+    public Collection<Train> getAllTrain(){
+        return trainSet;
     }
 
     @Override
     public String toString() {
-        String ret = id + " " + trains.size() + "/" + loadCapacity;
+        String ret = id + " " + trainSet.size() + "/" + loadCapacity;
         Iterator<Station> it = stationSet.iterator();
         it.next();
         while(it.hasNext()) {
