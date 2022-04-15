@@ -12,10 +12,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Scanner;
 
-/*
-约定：
-1.保证所有的命令函数接收到的args非null
- */
 public class CTSSystem {
     //单例类实现
     static private CTSSystem onlyInstance = new CTSSystem();
@@ -32,20 +28,20 @@ public class CTSSystem {
     }
     //超级管理员权限转换
     private boolean isSuper = false;
+    public boolean isSuper() {return isSuper;}
     public boolean setSuper(boolean isSuper){
         if(isSuper == this.isSuper) return false;
         this.isSuper = isSuper;
         return true;
     }
 
-
-    //用户相关
-    public void addUser(String[] args) throws CTSException {
-        if(args.length != 3){
-            throw new CTSException(ExOther.argumentIllegal);
-        }
-        User.addUser(args[0], args[1], args[2]);
-    }
+//    //用户相关
+//    public void addUser(String[] args) throws CTSException {
+//        if(args.length != 3){
+//            throw new CTSException(ExOther.argumentIllegal);
+//        }
+//        User.addUser(args[0], args[1], args[2]);
+//    }
 
     //线路管理
     public void addLine(String[] args) throws CTSException{
@@ -190,10 +186,10 @@ public class CTSSystem {
         Command commandInstance;
         try{
             commandClass = Class.forName("CTSSystem." + words[0]);
-            commandInstance = (Command)commandClass.getDeclaredConstructor().newInstance();
+            commandInstance = (Command)(commandClass.getDeclaredConstructor(String[].class)).newInstance((Object)args);
         }
-        catch (Exception e){
-            if(e instanceof ClassNotFoundException) {
+        catch (Throwable e){
+            if(e instanceof ClassNotFoundException || e instanceof NoClassDefFoundError) {
                 CTSException argError = new CTSException(ExOther.commandNoExist);
                 argError.printException();
             }else{
@@ -202,9 +198,9 @@ public class CTSSystem {
             return;
         }
         try {
-            commandInstance.checkArgumentNumber(args);
-            commandInstance.checkPermission(isSuper);
-            commandInstance.run(args);
+            commandInstance.checkArgumentNumber();
+            commandInstance.checkPermission();
+            commandInstance.run();
         }
         catch (CTSException e){
             e.printException();
