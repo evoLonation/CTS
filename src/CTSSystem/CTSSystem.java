@@ -15,7 +15,6 @@ import java.util.Scanner;
 /*
 约定：
 1.保证所有的命令函数接收到的args非null
-
  */
 public class CTSSystem {
     //单例类实现
@@ -23,34 +22,25 @@ public class CTSSystem {
     static public CTSSystem getInstance(){
         return onlyInstance;
     }
-    private CTSSystem(){}
+    private CTSSystem(){
+    }
 
     //系统退出功能实现
     private boolean isQuit = false;
-    private void QUIT(String[] args){
+    public void setQuit(){
         isQuit = true;
-        System.out.println("----- Good Bye! -----");
     }
-
     //超级管理员权限转换
     private boolean isSuper = false;
-    private void TunakTunakTun(String[] args) throws CTSException {
-        if(isSuper == true){
-            throw new CTSException(ExOther.permissionSet);
-        }
-        isSuper = true;
-        System.out.println("DuluDulu");
-    }
-    private void NutKanutKanut(String[] args) throws CTSException{
-        if(isSuper == false){
-            throw new CTSException(ExOther.permissionSet);
-        }
-        isSuper = false;
-        System.out.println("DaDaDa");
+    public boolean setSuper(boolean isSuper){
+        if(isSuper == this.isSuper) return false;
+        this.isSuper = isSuper;
+        return true;
     }
 
+
     //用户相关
-    private void addUser(String[] args) throws CTSException {
+    public void addUser(String[] args) throws CTSException {
         if(args.length != 3){
             throw new CTSException(ExOther.argumentIllegal);
         }
@@ -58,7 +48,7 @@ public class CTSSystem {
     }
 
     //线路管理
-    private void addLine(String[] args) throws CTSException{
+    public void addLine(String[] args) throws CTSException{
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length % 2 == 1){
             throw new CTSException(ExOther.argumentIllegal);
@@ -90,17 +80,17 @@ public class CTSSystem {
         Line.addLine(newLine);
         System.out.println("Add Line success");
     }
-    private void delLine(String[] args) throws CTSException{
+    public void delLine(String[] args) throws CTSException{
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 1) throw new CTSException(ExOther.argumentIllegal);
         Line.deleteLine(args[0]);
         System.out.println("Del Line success");
     }
-    private void lineInfo(String[] args) throws CTSException {
+    public void lineInfo(String[] args) throws CTSException {
         if(args.length != 1) throw new CTSException(ExOther.argumentIllegal);
         System.out.println(Line.getLineById(args[0]));
     }
-    private void listLine(String[] args) throws CTSException {
+    public void listLine(String[] args) throws CTSException {
         if(args.length != 0) throw new CTSException(ExOther.argumentIllegal);
         Collection<Line> lines = Line.getAllLine();
         if(lines.size() == 0){
@@ -114,7 +104,7 @@ public class CTSSystem {
     }
 
     // 站点管理
-    private void addStation(String[] args) throws CTSException{
+    public void addStation(String[] args) throws CTSException{
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 3) throw new CTSException(ExOther.argumentIllegal);
         Line line = Line.getLineById(args[0]);
@@ -129,7 +119,7 @@ public class CTSSystem {
         line.addStation(newStation);
         System.out.println("Add Station success");
     }
-    private void delStation(String[] args) throws CTSException{
+    public void delStation(String[] args) throws CTSException{
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 2) throw new CTSException(ExOther.argumentIllegal);
         Line line = Line.getLineById(args[0]);
@@ -138,7 +128,7 @@ public class CTSSystem {
     }
 
     //火车管理
-    private void addTrain(String[] args) throws CTSException {
+    public void addTrain(String[] args) throws CTSException {
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 6 && args.length != 8) throw new CTSException(ExOther.argumentIllegal);
         int typeNum = args.length == 8 ? 3 : 2;
@@ -151,18 +141,18 @@ public class CTSSystem {
         TrainSystem.addTrain(args[0], args[1], nums, prices);
         System.out.println("Add Train Success");
     }
-    private void delTrain(String[] args) throws CTSException {
+    public void delTrain(String[] args) throws CTSException {
         if(!isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 1) throw new CTSException(ExOther.argumentIllegal);
         TrainSystem.deleteTrain(args[0]);
         System.out.println("Del Train Success");
     }
-    private void checkTicket(String[] args) throws CTSException {
+    public void checkTicket(String[] args) throws CTSException {
         if(isSuper) throw new CTSException(ExOther.commandNoExist);
         if(args.length != 4) throw new CTSException(ExOther.argumentIllegal);
         TrainSystem.checkTicket(args[0], args[1], args[2], args[3]);
     }
-    private void listTrain(String[] args) throws CTSException {
+    public void listTrain(String[] args) throws CTSException {
         if(args.length > 1) throw new CTSException(ExOther.argumentIllegal);
         Collection<Train> trains;
         if(args.length == 0){
@@ -181,7 +171,7 @@ public class CTSSystem {
     }
 
     //执行部分
-    public void start(){
+    public void run(){
         Scanner in = new Scanner(System.in);
         while (!isQuit) {
             String command = in.nextLine();
@@ -196,22 +186,49 @@ public class CTSSystem {
         String[] words = command.split(" +");
         String args[] = Arrays.copyOfRange(words, 1, words.length);
         if(words[0].equals(""))return;
+        Class commandClass;
+        Command commandInstance;
         try{
-            Method method = CTSSystem.class.getDeclaredMethod(words[0],String[].class);
-            method.invoke(this, (Object)args);
+            commandClass = Class.forName("CTSSystem." + words[0]);
+            commandInstance = (Command)commandClass.getDeclaredConstructor().newInstance();
         }
-        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
-            if(e.getCause() instanceof CTSException){
-                ((CTSException)(e.getCause())).printException();
-            }
-            else if(e.getCause() == null){
+        catch (Exception e){
+            if(e instanceof ClassNotFoundException) {
                 CTSException argError = new CTSException(ExOther.commandNoExist);
                 argError.printException();
-            }
-            else{
-                System.out.println("系统内部出错");
+            }else{
                 e.printStackTrace();
             }
+            return;
         }
+        try {
+            commandInstance.checkArgumentNumber(args);
+            commandInstance.checkPermission(isSuper);
+            commandInstance.run(args);
+        }
+        catch (CTSException e){
+            e.printException();
+        }
+        return;
+        //        try{
+//            Method method = CTSSystem.class.getDeclaredMethod(words[0],String[].class);
+//            method.invoke(this, (Object)args);
+//        }
+//        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
+//            if(e.getCause() instanceof CTSException){
+//                ((CTSException)(e.getCause())).printException();
+//            }
+//            else if(e.getCause() == null){
+//                CTSException argError = new CTSException(ExOther.commandNoExist);
+//                argError.printException();
+//            }
+//            else{
+//                System.out.println("系统内部出错");
+//                e.printStackTrace();
+//            }
+//        }
     }
+
+
+
 }
