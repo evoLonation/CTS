@@ -2,104 +2,142 @@ package Train;
 
 import CTSException.*;
 import Line.Line;
+import Order.Order;
 
-import java.util.Formatter;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TreeSet;
+import java.util.HashSet;
+import java.util.TreeMap;
 
 public abstract class Train implements Comparable{
 
-    static private HashMap<String, Train> trainsMap = new HashMap<String, Train>();
+    private String serial;
 
-    //车次
-    private String id;
-    private int[] ticketNums;
-    private double[] ticketPrices;
+    int typeNum;
     private Line myLine;
     protected HashMap<String, Integer> trainSeatMap = new HashMap<String, Integer>();
     protected String[] trainSeatArr;
 
-    //仅用于addTrain
-    Train(String id, int[] ticketNums, double[] ticketPrices, String... seats) throws CTSException {
-        TrainSystem.checkIdIllegal(id);
-        this.id = id;
-        int typeNum = id.toCharArray()[0] == '0' || id.toCharArray()[0] == 'G' ? 3 : 2;
-        if(ticketNums.length != typeNum || ticketPrices.length != typeNum || seats.length != typeNum){
-            throw new CTSException(ExOther.argumentIllegal);
-        }
-        for(int num : ticketNums){
-            if(num < 0){
-                throw new CTSException(ExTrain.ticketNum);
-            }
-        }
-        for(double price : ticketPrices){
-            if(price < 0){
-                throw new CTSException(ExTrain.ticketPrice);
-            }
-        }
-        this.ticketNums = ticketNums;
-        this.ticketPrices = ticketPrices;
+    protected Train(String serial, int typeNum, String... seats){
+        this.typeNum = typeNum;
+        this.serial = serial;
+        ticketPrices = new double[typeNum];
+        ticketNums = new int[typeNum];
         this.trainSeatArr = seats;
         for(int i = 0; i < typeNum; i++)
             trainSeatMap.put(seats[i], i);
+        for(int i = 0; i < typeNum; i++)
+            myOrder.put(seats[i], new HashSet<Order>());
+    }
+    static public Train TrainFactory(String trainSerial) throws DebugException{
+        if(!isSerial(trainSerial))
+            throw new DebugException(ExTrain.trainSerial);
+        Train newTrain;
+        switch (Train.getTypeBySerial(trainSerial)){
+            case '0': newTrain = new NormalTrain(trainSerial);break;
+            case 'G': newTrain = new GatimaanTrain(trainSerial);break;
+            case 'K': newTrain = new KoyaTrain(trainSerial);break;
+            default: throw new DebugException(ExOther.other);
+        }
+        return newTrain;
     }
 
-    String getId(){
-        return id;
+
+    public int getTypeNum(){
+        return typeNum;
     }
-    Line getMyLine() throws CTSException{
+
+    public String getSerial(){
+        return serial;
+    }
+
+    public Line getMyLine() throws DebugException{
         if(myLine == null){
-            throw new CTSException(ExTrain.noLineWith);
+            throw new DebugException(ExTrain.noLineWith);
         }
         return myLine;
     }
 
-    void setMyLine(Line line) throws CTSException{
-        if(this.myLine != null){
-            throw new CTSException(ExTrain.alreadySetLine);
-        }
-        line.giveKeyTo(this);
-        key.addTrain(this);
-        this.myLine = line;
-    }
 
-    private Line.ToTrain key;
-    public void receiveKey(Line.ToTrain key){
-        this.key = key;
-    }
 
-    void releaseMyLine() throws CTSException{
-        if(this.myLine == null){
-            throw new CTSException(ExTrain.noLineWith);
-        }
-        this.myLine = null;
-        key.deleteTrain(this);
-    }
 
+
+    public void deleteSelf() throws DebugException {
+        myLine.deleteTrain(this);
+        TrainSystem.getInstance().deleteTrain(this);
+    }
 
     //票价相关
-    boolean haveSeat(String seat) {
+    public boolean isSeatExist(String seat) {
         return trainSeatMap.get(seat) != null;
     }
-    int getSeatNum(String seat) throws CTSException {
-        if(!haveSeat(seat))throw new CTSException(ExTrain.noHaveSeat);
-        return ticketNums[(int)trainSeatMap.get(seat)];
+
+    public class ToLine {
+        public void setMyLine(Line line) throws DebugException{
+            if(myLine != null){
+                throw new DebugException(ExTrain.alreadySetLine);
+            }
+            myLine = line;
+        }
+        public void releaseMyLine() throws DebugException{
+            if(myLine == null){
+                throw new DebugException(ExTrain.noLineWith);
+            }
+            myLine = null;
+        }
+
     }
-    double getSeatPrice(String seat) throws CTSException {
-        if(!haveSeat(seat))throw new CTSException(ExTrain.noHaveSeat);
+    public void giveKeyTo(Line other) {
+        other.receiveKey(new Train.ToLine());
+    }
+
+
+
+
+    static public boolean isSerial(String trainSerial){
+        return trainSerial.matches("[G|K|0]\\d\\d\\d\\d");
+    }
+
+    static public char getTypeBySerial(String serial) throws DebugException{
+        if(!Train.isSerial(serial))
+            throw new DebugException(ExTrain.trainSerial);
+        return serial.toCharArray()[0];
+    }
+
+    //购买相关
+    private int[] ticketNums;
+    private double[] ticketPrices;
+    public HashMap<String, HashSet<Order>> myOrder = new HashMap<>();
+
+    public int getRemainSeatNum(String seat) throws DebugException {
+        if(!isSeatExist(seat))throw new DebugException(ExTrain.noHaveSeat);
+        int haveBuy = 0;
+        HashSet<Order> orders = myOrder.get(seat);
+        for(Order o : orders) {
+            haveBuy += o.getNum();
+        }
+        return ticketNums[trainSeatMap.get(seat)] - haveBuy;
+    }
+
+    public double getSeatPrice(String seat) throws DebugException {
+        if(!isSeatExist(seat))throw new DebugException(ExTrain.noHaveSeat);
         return ticketPrices[(int)trainSeatMap.get(seat)];
     }
 
-
-    @Override
-    public String toString() {
-        String ret = String.format("%s: %s", id, myLine.getId());
-
-        for(int i = 0; i < ticketPrices.length; i++){
-            ret += String.format(" [%s]%.2f:%d", trainSeatArr[i], ticketPrices[i], ticketNums[i]);
-        }
-        return  ret;
+    public void setTicketPrices(double[] ticketPrices) throws DebugException{
+        if(ticketPrices.length != typeNum)
+            throw new DebugException(ExTrain.typeNumNoMatch);
+        this.ticketPrices = ticketPrices.clone();
     }
+
+    public void setTicketNums(int[] ticketNums) throws DebugException {
+        if(ticketNums.length != typeNum)
+            throw new DebugException(ExTrain.typeNumNoMatch);
+        this.ticketNums = ticketNums.clone();
+    }
+
+
+
 
     @Override
     public int compareTo(Object o) {
@@ -108,8 +146,19 @@ public abstract class Train implements Comparable{
         int type2 = o instanceof KoyaTrain ? 1 :
                 o instanceof GatimaanTrain ? 2 : 3;
         if(type1 == type2){
-            return this.id.compareTo(((Train)o).id);
+            return this.serial.compareTo(((Train)o).serial);
         }
         return type1 - type2;
     }
+
+    @Override
+    public String toString() {
+        String ret = String.format("%s: %s", serial, myLine.getId());
+
+        for(int i = 0; i < ticketPrices.length; i++){
+            ret += String.format(" [%s]%.2f:%d", trainSeatArr[i], ticketPrices[i], ticketNums[i]);
+        }
+        return  ret;
+    }
+
 }

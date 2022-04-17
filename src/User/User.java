@@ -1,14 +1,17 @@
 package User;
 
 import CTSException.*;
+import Order.Order;
+
+import java.util.ArrayList;
 
 
 public class User {
-    String name;
-    String gender;
-    String aadhaar;
+    private String name;
+    private String gender;
+    private String aadhaar;
 
-    public User(String name, String gender, String aadhaar) throws CTSException {
+    public User(String name, String gender, String aadhaar) throws DebugException {
         try {
             setName(name);
             setGender(gender);
@@ -32,25 +35,25 @@ public class User {
         return aadhaar;
     }
 
-    public boolean setName(String name) throws CTSException{
-        if(!isName(name)) throw new CTSException(ExUser.name);
+    public boolean setName(String name) throws DebugException{
+        if(!isName(name)) throw new DebugException(ExUser.name);
         this.name = name;
         return true;
     }
 
-    public boolean setGender(String gender) throws CTSException{
-        if(!isGender(gender)) throw new CTSException(ExUser.gender);
+    public boolean setGender(String gender) throws DebugException{
+        if(!isGender(gender)) throw new DebugException(ExUser.gender);
         this.gender = gender;
         return true;
     }
 
-    public boolean setAadhaar(String aadhaar) throws CTSException{
-        if(!isAadhaar(aadhaar)) throw new CTSException(ExUser.aadhaarIllegal);
+    public boolean setAadhaar(String aadhaar) throws DebugException{
+        if(!isAadhaar(aadhaar)) throw new DebugException(ExUser.aadhaarIllegal);
         this.aadhaar = aadhaar;
         return true;
     }
 
-    static public boolean isAadhaar(String str) {
+    static public boolean isAadhaar(String str)  {
         // 先保证12位，全数字
         if (!str.matches("\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d")) {
             return false;
@@ -67,8 +70,22 @@ public class User {
         return true;
     }
 
-    static public String aadhaarToGender(String aadhaar) throws CTSException{
-        if(!isAadhaar(aadhaar)) throw new CTSException(ExUser.aadhaarIllegal);
+    static public boolean isGender(String str) {
+        if (str.matches("[MFO]")) {
+            return true;
+        }
+        return false;
+    }
+
+    static public boolean isName(String str) {
+        if (str.matches("[a-zA-Z_]+")) {
+            return true;
+        }
+        return false;
+    }
+
+    static public String aadhaarToGender(String aadhaar) throws DebugException{
+        if(!isAadhaar(aadhaar)) throw new DebugException(ExUser.aadhaarIllegal);
         int num = (aadhaar.toCharArray()[11])-'0';
         String ret;
         switch (num){
@@ -87,19 +104,20 @@ public class User {
         return ret;
     }
 
-    static public boolean isGender(String str) {
-        if (str.matches("[MFO]")) {
-            return true;
+    ////Order相关
+    public ArrayList<Order> orders = new ArrayList<>();
+
+    public void listOrder() {
+        if(orders.size() == 0) {
+            System.out.println("No order");
+            return;
         }
-        return false;
+        for(int i = orders.size() - 1; i >= 0; i--) {
+            System.out.println(orders.get(i));
+        }
+
     }
 
-    static public boolean isName(String str) {
-        if (str.matches("[a-zA-Z_]+")) {
-            return true;
-        }
-        return false;
-    }
 
     @Override
     public String toString() {

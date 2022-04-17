@@ -7,30 +7,18 @@ import Train.Train;
 import java.util.*;
 
 public class Line {
-    private static TreeMap<String, Line> lines = new TreeMap<String, Line>();
 
     private String id;
     private int loadCapacity;
-    private int lastNum = 0;
-//    TreeMap<Integer, Station> stationsByDistance = new TreeMap<Integer, Station>();
     private TreeMap<String, Station> stationByName = new TreeMap<>();
 
-    class StationCompare implements Comparator{
-        @Override
-        public int compare(Object o1, Object o2) {
-            if(((Station)o1).getDistance() == ((Station)o2).getDistance()){
-                return ((Station)o1).getName().compareTo(((Station)o2).getName());
-            }
-            return ((Station)o1).getDistance() - ((Station)o2).getDistance();
-        }
-    }
-    private TreeSet<Station> stationSet = new TreeSet<>(new StationCompare());
+    private TreeSet<Station> stationSet = new TreeSet<>();
     private TreeSet<Train> trainSet = new TreeSet<Train>();
 
 
-    public Line(String id, int loadCapacity) throws CTSException{
+    public Line(String id, int loadCapacity) throws DebugException{
         if(loadCapacity <= 0){
-            throw new CTSException(ExLine.capacity);
+            throw new DebugException(ExLine.capacity);
         }
         this.id = id;
         this.loadCapacity = loadCapacity;
@@ -41,84 +29,64 @@ public class Line {
     public String getId(){
         return id;
     }
-
-    static public boolean checkIdExist(String id){
-        Line ret = lines.get(id);
-        return ret != null;
-    }
-    static public Line getLineById(String id) throws CTSException{
-        Line ret = lines.get(id);
-        if(ret == null){
-            throw new CTSException(ExLine.lineNoExist);
-        }
-        return ret;
-    }
-
-    public Station getStationByName(String name) throws CTSException{
-        Station station = stationByName.get(name);
-        if(station == null){
-            throw new CTSException(ExLine.stationNoExist);
-        }
-        return station;
-    }
     public int getRemainCapacity(){
         return loadCapacity - trainSet.size();
     }
-    static public Collection<Line> getAllLine(){
-        return lines.values();
+    public Station getStationByName(String name) throws DebugException{
+        Station station = stationByName.get(name);
+        if(station == null){
+            throw new DebugException(ExLine.stationNoExist);
+        }
+        return station;
+    }
+    public Collection<Train> getAllTrain(){
+        return trainSet;
     }
 
-    public void addStation(Station station) throws CTSException {
+    public boolean isStationNameExist(String name) {
+        Station station = stationByName.get(name);
+        return station != null;
+    }
+
+
+    public void addStation(Station station) throws DebugException {
         if(stationByName.get(station.getName()) != null){
-            throw new CTSException(ExLine.stationExist);
+            throw new DebugException(ExLine.stationExist);
         }
         stationByName.put(station.getName(), station);
         stationSet.add(station);
     }
-    public void deleteStation(String stationName) throws CTSException {
-        Station station = stationByName.get(stationName);
-        if(station == null){
-            throw new CTSException(ExLine.stationNoExist);
+    public void deleteStation(String stationName) throws DebugException {
+        if(!isStationNameExist(stationName)){
+            throw new DebugException(ExLine.stationNoExist);
         }
+        Station station = stationByName.get(stationName);
         stationByName.remove(stationName);
         stationSet.remove(station);
     }
 
-    static public void addLine(Line line) throws CTSException{
-        if(lines.get(line.id) != null){
-            throw new CTSException(ExLine.lineExist);
+    public void addTrain(Train newTrain) throws DebugException {
+        if(trainSet.size() >= loadCapacity){
+            throw new DebugException(ExTrain.lineExistAndFree);
         }
-        lines.put(line.id, line);
+        trainSet.add(newTrain);
+        newTrain.giveKeyTo(this);
+        key.setMyLine(this);
     }
-    static public void deleteLine(String lineId) throws CTSException{
-        if(lines.get(lineId) == null){
-            throw new CTSException(ExLine.lineNoExist);
+    public void deleteTrain(Train train) throws DebugException{
+        if(!trainSet.remove(train)){
+            throw new DebugException(ExLine.NotHaveTheTrain);
         }
-        lines.remove(lineId);
+        train.giveKeyTo(this);
+        key.releaseMyLine();
     }
 
-    //给Train类的友元函数
-    public class ToTrain{
-        public void addTrain(Train train) throws CTSException{
-            if(trainSet.size() >= loadCapacity){
-                throw new CTSException(ExTrain.lineExistAndFree);
-            }
-            trainSet.add(train);
-        }
-        public void deleteTrain(Train train) throws CTSException{
-            if(!trainSet.remove(train)){
-                throw new CTSException(ExLine.NotHaveTheTrain);
-            }
-        }
-    }
-    public void giveKeyTo(Train other) {
-        other.receiveKey(new ToTrain());
+    private Train.ToLine key;
+    public void receiveKey(Train.ToLine key){
+        this.key = key;
     }
 
 
-    public Collection<Train> getAllTrain(){
-        return trainSet;
-    }
 
     @Override
     public String toString() {
